@@ -170,9 +170,11 @@ iframe.sim{width:100%;height:calc(100% - 100px);border:1px solid var(--line);bor
 .panel h3{font:700 12px var(--f-b);letter-spacing:.09em;text-transform:uppercase;color:var(--acc);margin:12px 0 6px}
 .mode-board .board{--fs:clamp(18px,1.9vw,32px)}
 .ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pic{pointer-events:none}.pic .ctl,.pic .tabs,.pic .out,.pic .vz-row>div:nth-child(2),.pic button{display:none!important}.pic .vz-row{grid-template-columns:1fr}
+.vz-row{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))!important}
 .light{cursor:pointer}
 .st2{display:grid;grid-template-columns:minmax(0,1fr);gap:1em;align-items:start}.st2 .card{font-size:.8em}.st2 .chip{font-size:.8em}
-@media(min-width:1100px){.mode-board .st2{grid-template-columns:minmax(0,.72fr) minmax(0,1.5fr)}}
+@media(min-width:1100px){.mode-board .st2{grid-template-columns:minmax(0,.85fr) minmax(0,1.4fr)}}
 .dock button.timer{flex-direction:row;font:800 19px var(--f-d);min-width:88px;align-self:center;color:var(--ink)}.tally div{cursor:pointer;user-select:none}
 .simlist a{flex-wrap:wrap}
 </style>
@@ -780,6 +782,8 @@ const UI={
  meths:{lab:['Лабораторный метод','Зертханалық әдіс'],coop:['Обучение в сотрудничестве','Ынтымақтастықта оқыту'],vals:['Педагогика создания ценностей','Құндылықтарды қалыптастыру педагогикасы']},
  noViz:['Для этого урока — обсуждение и работа с текстом: используйте ручку и жребий.','Бұл сабақта – талқылау және мәтінмен жұмыс: қалам мен жеребені пайдаланыңыз.'],
  steps:['Этап','Кезең'],
+ wk:['Ход работы','Жұмыс барысы'],wkOf:['шаг','қадам'],done:['Готово','Дайын'],prev:['Назад','Артқа'],grpT:['Ход по группам (нажмите ячейку)','Топтар бойынша барыс (ұяшықты басыңыз)'],grp:['Гр.','Топ'],fullT:['Полный текст задания','Тапсырманың толық мәтіні'],finish:['Все шаги выполнены!','Барлық қадам орындалды!'],
+
  vh0:['Рассмотрите схему: что здесь происходит? Ваш прогноз?','Схеманы қараңыз: мұнда не болып жатыр? Сіздің болжамыңыз?'],vh1:['Какие величины на схеме? Что мы будем выяснять?','Схемада қандай шамалар бар? Біз нені анықтаймыз?'],vh3:['Проверьте вывод на модели: меняйте параметры.','Қорытындыны модельде тексеріңіз: параметрлерді өзгертіңіз.'],vh4:['Проверьте свой ответ на модели.','Жауабыңызды модельде тексеріңіз.'],vh5:['Вернитесь к прогнозу: что изменилось?','Болжамға оралыңыз: не өзгерді?'],simT:['Симулятор','Симулятор'],simNote:['Если окно пустое — откройте симулятор в новой вкладке (нужен интернет).','Терезе бос болса — симуляторды жаңа бетте ашыңыз (интернет қажет).'],
 
  scale:['Шкала оценивания: 10 баллов','Бағалау шкаласы: 10 балл'],stu:['Ученик','Оқушы'],all:['— общий лист —','— жалпы парақ —'],total:['Итого','Барлығы'],pt:['б.','б.'],
@@ -826,6 +830,29 @@ function buildRail(){const r=$('#rail');r.innerHTML='';for(let i=0;i<6;i++){cons
 function lightsBlock(which){const t=TALLY[which],w=el('div');const L=el('div','lights');[['l-g','green'],['l-y','yellow'],['l-r','red']].forEach(([c,k],i)=>{const col=el('div');col.style.textAlign='center';const b=el('button','light '+c);b.setAttribute('aria-label',U(k));b.setAttribute('aria-pressed','true');const n=el('div','meta',`${U(k)}: <b>${t[i]}</b>`);b.onclick=()=>{t[i]++;n.innerHTML=`${U(k)}: <b>${t[i]}</b>`};col.append(b,n);L.append(col)});w.append(L);return w}
 function lessonKTP(){const out=[];(DATA.ktp.ru[ST.n]||[]).forEach(([c,t])=>out.push([c,LANG?(DATA.ktp.kk[c]||t):t]));return out}
 
+
+let STEPI=0,GRP={};
+function stepsFor(x){const L=LANG,t=x.explore[L].replace(/\s+/g,' ').trim(),clean=a=>a.replace(/[;:\s]+$/,'').trim();let core=[];
+  const m=t.split(/\s*\d\)\s*/);
+  if(m.length>=3){const intro=clean(m[0]);m.slice(1).forEach((p,i,arr)=>{if(i===arr.length-1){const q=p.split(/\.\s+/);core.push(clean(q[0]).replace(/\.$/,''));q.slice(1).forEach(z=>core.push(clean(z).replace(/\.$/,'')))}else core.push(clean(p))});
+    if(intro&&!/^(Станции|Тәжірибе станциялары|Станциялар)/i.test(intro))core.unshift(intro);}
+  else core=t.split(/\.\s+(?=[А-ЯЁӘҒҚҢӨҰҮҺІA-Z«(])/).map(z=>clean(z).replace(/\.$/,'')).filter(Boolean);
+  const pre=[L?'Рөлдерді бөліңіз: тәжірибеші, тіркеуші, талдаушы, спикер. Жабдықты алыңыз.':'Распределите роли: экспериментатор, регистратор, аналитик, спикер. Возьмите оборудование.'];
+  const post=L?['Деректерді (бақылауларды) кестеге жазыңыз.','Қорытынды жасаңыз. Тірек: «Біз анықтадық: …, себебі …»','Спикер: 30 секундтық есеп. Қорытындыны басқа топтармен салыстырыңыз.']:['Запишите данные (наблюдения) в таблицу.','Сформулируйте вывод. Опора: «Мы выяснили, что …, потому что …»','Спикер: отчёт 30 секунд. Сравните вывод с другими группами.'];
+  return pre.concat(core.map(c=>c.charAt(0).toUpperCase()+c.slice(1)),post)}
+function stepper(x){const wrap=el('div'),st=stepsFor(x),N=st.length;const key=x.n;GRP[key]=GRP[key]||Array.from({length:6},()=>Array(N).fill(0));
+  const draw=()=>{wrap.innerHTML='';
+    wrap.append(el('h2','',`${U('wk')}`));
+    const dots=el('div','');dots.style.cssText='display:flex;flex-wrap:wrap;gap:.4em;margin:.2em 0 .7em';
+    st.forEach((tx,i)=>{const d=el('button','',i<STEPI?'✓':String(i+1));const cur=i===STEPI,dn=i<STEPI;d.style.cssText=`width:2.1em;height:2.1em;border-radius:50%;border:2px solid ${cur?'var(--acc)':'transparent'};background:${dn?'var(--good)':cur?'var(--acc)':'var(--line)'};color:${dn||cur?'#fff':'var(--ink2)'};font:800 .8em var(--f-d);${cur?'transform:scale(1.15)':''}`;d.title=tx;d.onclick=()=>{STEPI=i;draw()};dots.append(d)});wrap.append(dots);
+    const c=el('div','');c.style.cssText='padding:.9em 1.1em;border-radius:14px;border:2px solid var(--acc);background:var(--acc-soft);min-height:6.5em';
+    c.innerHTML=STEPI>=N?`<div style="font:800 1.3em var(--f-d)">✓ ${U('finish')}</div>`:`<div class="meta" style="font-weight:700;letter-spacing:.08em;text-transform:uppercase">${U('wkOf')} ${STEPI+1} / ${N}</div><div style="font:700 1.15em/1.4 var(--f-d);margin-top:.2em">${esc(st[STEPI])}</div>`;wrap.append(c);
+    if(STEPI+1<N)wrap.append(el('div','meta',`→ ${esc(st[STEPI+1])}`));
+    const bar=el('div','chips');bar.style.margin='.6em 0';const bp=el('button','btn',`← ${U('prev')}`),bn=el('button','btn pri',STEPI>=N?U('finish'):`${U('done')} →`);bp.onclick=()=>{STEPI=Math.max(0,STEPI-1);draw()};bn.onclick=()=>{STEPI=Math.min(N,STEPI+1);draw()};bar.append(bp,bn);wrap.append(bar);
+    const d=el('details','nt');d.innerHTML=`<summary>${U('grpT')}</summary>`;const tb=el('table','dt');tb.innerHTML='<tr><th></th>'+st.map((_,i)=>`<th>${i+1}</th>`).join('')+'</tr>';
+    GRP[key].forEach((row,g)=>{const tr=el('tr');tr.innerHTML=`<td><b>${U('grp')} ${g+1}</b></td>`;row.forEach((v,i)=>{const td=el('td',''  ,v?'✓':'');td.style.cssText=`cursor:pointer;background:${v?'var(--good)':'transparent'};color:#fff;font-weight:700`;td.onclick=()=>{row[i]=v?0:1;draw();wrap.querySelector('details').open=true};tr.append(td)});tb.append(tr)});d.append(tb);wrap.append(d);
+    const fd=el('details','nt');fd.innerHTML=`<summary>${U('fullT')}</summary><p>${md(x.explore[LANG])}</p>`;wrap.append(fd)};
+  draw();return wrap}
 function renderBoard(){const b=$('#board'),x=cur(),s=ST.stage;b.innerHTML='';b.scrollTop=0;
   const kick=el('span','kick',`${U('lesson')} ${x.n} · ${UI.sec[x.sec][LANG]} · ${stageName(s)} · ${stageMin(s)} ${U('min')}`);b.append(kick);
   const T=x.topic[LANG];
@@ -836,7 +863,7 @@ function renderBoard(){const b=$('#board'),x=cur(),s=ST.stage;b.innerHTML='';b.s
     b.append(el('h2','',`<br>${U('succ')}`));const ch=el('div','chips');UI.sp[LANG].forEach(t=>ch.append(el('span','chip acc',esc(t))));b.append(ch);
     const k=lessonKTP();if(k.length){b.append(el('h2','',`<br>${U('obj')}`));const c=el('div','chips');k.forEach(([a,t])=>c.append(el('span','chip',`<b>${a}</b> ${esc(t)}`)));b.append(c)}}
   else if(s===2){const g=el('div','st2'),L=el('div'),Rr=el('div');g.append(L,Rr);b.append(g);
-    L.append(el('h2','',U('task')));L.append(el('div','card',md(x.explore[LANG])));
+    STEPI=0;L.append(stepper(x));
     const ch=el('div','chips');ch.style.margin='.7em 0';UI.roles[LANG].forEach((r,i)=>ch.append(el('span','chip'+(i===0?' acc':''),`${i+1} · ${esc(r)}`)));L.append(ch);
     L.append(el('div','meta',`${U('res')}: ${esc(x.res[LANG])}`));
     const pn=vizPane(x);if(pn)Rr.append(pn);else Rr.append(el('div','card',U('noViz')))}
@@ -856,11 +883,12 @@ function renderBoard(){const b=$('#board'),x=cur(),s=ST.stage;b.innerHTML='';b.s
     const g=el('div','grid2');UI.refl[LANG].forEach(r=>g.append(el('div','card',esc(r))));b.append(g);b.append(el('div','meta',`<br>${U('hw')}`))}
 }
 
-function vizPane(x){const items=[];(VZ[x.n]||[]).forEach(v=>items.push({t:v.t[LANG],f:h=>v.f(h)}));
-  simsFor(x.n).forEach(sm=>items.push({t:'🧪 '+sm.t,f:h=>{const f=el('iframe','sim');f.src=sm.u;f.style.height='min(70vh,560px)';f.setAttribute('allowfullscreen','');f.setAttribute('referrerpolicy','no-referrer');h.append(f,el('div','meta',U('simNote')+` <a href="${esc(sm.u)}" target="_blank" rel="noopener">${U('open')}</a>`))}}));
+function vizPane(x,pic){const items=[];(VZ[x.n]||[]).forEach(v=>items.push({t:v.t[LANG],f:h=>v.f(h)}));
+  if(pic)items.length=Math.min(items.length,1);else simsFor(x.n).forEach(sm=>items.push({t:'🧪 '+sm.t,f:h=>{const f=el('iframe','sim');f.src=sm.u;f.style.height='min(70vh,560px)';f.setAttribute('allowfullscreen','');f.setAttribute('referrerpolicy','no-referrer');h.append(f,el('div','meta',U('simNote')+` <a href="${esc(sm.u)}" target="_blank" rel="noopener">${U('open')}</a>`))}}));
   if(!items.length)return null;const holder=el('div','viz');let host;const show=i=>{if(host)host.remove();host=el('div','viz');holder.append(host);items[i].f(host)};
+  if(pic)holder.classList.add('pic');
   if(items.length>1)holder.append(tabsBar(items.map(i=>i.t),show));show(0);return holder}
-function decorate(){const b=$('#board'),s=ST.stage,x=cur();if(s===2)return;const pane=vizPane(x);if(!pane)return;
+function decorate(){return;const b=$('#board'),s=ST.stage,x=cur();if(s===2)return;const pane=vizPane(x,true);if(!pane)return;
   const kids=[...b.children].slice(1);const g=el('div','st2'),L=el('div'),R=el('div');kids.forEach(k=>L.append(k));R.append(el('div','meta',U('vh'+s)),pane);g.append(L,R);b.append(g)}
 function tabsBar(names,cb){const r=el('div','tabs');r.style.margin='0 0 .5em';names.forEach((n,i)=>{const b=el('button','',esc(n));b.setAttribute('aria-pressed',i===0);b.onclick=()=>{[...r.children].forEach((c,j)=>c.setAttribute('aria-pressed',j===i));cb(i)};r.append(b)});return r}
 
@@ -992,7 +1020,7 @@ function buildSims(p){const x=cur(),key='n'+x.n;const body=el('div');p.append(bo
 /* ===== render ===== */
 function render(){buildRail();renderBoard();decorate();renderNotes();document.title=U('brand')}
 function stageChanged(){save();strokes=[];redrawPen();resetTimer(true);if(panelKind==='crit'){const k=panelKind;closePanel();openPanel('crit',buildCrit)}render()}
-function lessonChanged(){TALLY={start:[0,0,0],end:[0,0,0]};picked=[];closePanel();buildBar();stageChanged()}
+function lessonChanged(){GRP={};TALLY={start:[0,0,0],end:[0,0,0]};picked=[];closePanel();buildBar();stageChanged()}
 addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test((e.target.tagName||'')))return;
   if(e.key==='ArrowRight'||e.key==='PageDown'){if(ST.stage<5){ST.stage++;stageChanged()}else if(ST.n<34){ST.n++;ST.stage=0;lessonChanged()}}
   else if(e.key==='ArrowLeft'||e.key==='PageUp'){if(ST.stage>0){ST.stage--;stageChanged()}else if(ST.n>1){ST.n--;ST.stage=5;lessonChanged()}}
